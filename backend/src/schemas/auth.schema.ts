@@ -20,4 +20,11 @@ export const registerSchema = z.object({
     .max(128, "Password must be at most 128 characters"),
 });
 
+export const loginSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Password is required").max(128, "Password is too long"),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
+
 export type RegisterInput = z.infer<typeof registerSchema>;

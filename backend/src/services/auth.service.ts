@@ -1,9 +1,9 @@
-import { input } from "zod";
+import { randomUUID } from "node:crypto";
 import { AppError } from "../errors/app-error.js";
-import { createUser } from "../repositories/user.repository.js";
+import { createUser, findUserByEmail } from "../repositories/user.repository.js";
 import type { UserRow } from "../repositories/user.repository.js";
-import type { RegisterInput } from "../schemas/auth.schema.js";
-import { hashPassword } from "../utils/password.js";
+import type { LoginInput, RegisterInput } from "../schemas/auth.schema.js";
+import { hashPassword, verifyPassword } from "../utils/password.js";
 
 const isDuplicateEmailError = (err: unknown): boolean => {
   return (
@@ -31,5 +31,21 @@ export const registerUser = async (input: RegisterInput): Promise<UserRow> => {
     }
     throw err;
   }
+};
+
+const DUMMY_HASH = await hashPassword(randomUUID());
+
+export const loginUser = async (input: LoginInput): Promise<UserRow> => {
+  const user = await findUserByEmail(input.email);
+
+  const hashToCheck = user ? user.password_hash : DUMMY_HASH;
+  const passwordMatches = await verifyPassword(hashToCheck, input.password);
+
+  if (!user || !passwordMatches) {
+    throw new AppError(401, "Invalid email or password");
+  }
+
+  const { password_hash: _passwordHash, ...safeUser } = user;
+  return safeUser;
 };
 
