@@ -10,6 +10,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   const input = req.body as LoginInput;
-  const user = await loginUser(input);
-  res.status(200).json({ user });
+  const { user, accessToken } = await loginUser(input);
+  res.status(200).json({ user, accessToken });
 };

@@ -4,6 +4,7 @@ import { createUser, findUserByEmail } from "../repositories/user.repository.js"
 import type { UserRow } from "../repositories/user.repository.js";
 import type { LoginInput, RegisterInput } from "../schemas/auth.schema.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
+import { signAccessToken } from "../utils/jwt.js";
 
 const isDuplicateEmailError = (err: unknown): boolean => {
   return (
@@ -35,7 +36,9 @@ export const registerUser = async (input: RegisterInput): Promise<UserRow> => {
 
 const DUMMY_HASH = await hashPassword(randomUUID());
 
-export const loginUser = async (input: LoginInput): Promise<UserRow> => {
+export const loginUser = async (
+  input: LoginInput,
+): Promise<{ user: UserRow; accessToken: string }> => {
   const user = await findUserByEmail(input.email);
 
   const hashToCheck = user ? user.password_hash : DUMMY_HASH;
@@ -46,6 +49,11 @@ export const loginUser = async (input: LoginInput): Promise<UserRow> => {
   }
 
   const { password_hash: _passwordHash, ...safeUser } = user;
-  return safeUser;
+  const accessToken = await signAccessToken({
+    userId: safeUser.id,
+    role: safeUser.role,
+  });
+
+  return { user: safeUser, accessToken };
 };
 
