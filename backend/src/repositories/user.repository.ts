@@ -1,0 +1,30 @@
+import { pool } from "../db.js";
+
+export type UserRow = {
+  id: string;
+  email: string;
+  name: string;
+  role: "user" | "recruiter" | "admin";
+  created_at: Date;
+};
+
+type CreateUserData = {
+  name: string;
+  email: string;
+  passwordHash: string;
+};
+
+export const createUser = async (data: CreateUserData): Promise<UserRow> => {
+  const result = await pool.query<UserRow>(
+    `INSERT INTO users (name, email, password_hash)
+    VALUES ($1, $2, $3)
+    RETURNING id, email, name, role, created_at`,
+    [data.name, data.email, data.passwordHash],
+  );
+
+  const user = result.rows[0];
+  if (!user) {
+    throw new Error("Inser returned no row");
+  }
+  return user;
+}
