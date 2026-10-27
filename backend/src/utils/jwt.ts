@@ -1,5 +1,4 @@
 import { SignJWT, jwtVerify } from "jose";
-import { type } from "os";
 
 const { JWT_ACCESS_SECRET } = process.env;
 
