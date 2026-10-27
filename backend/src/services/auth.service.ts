@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { AppError } from "../errors/app-error.js";
-import { createUser, findUserByEmail } from "../repositories/user.repository.js";
+import { createUser, findUserByEmail, findUserById } from "../repositories/user.repository.js";
 import type { UserRow } from "../repositories/user.repository.js";
 import type { LoginInput, RegisterInput } from "../schemas/auth.schema.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import { signAccessToken } from "../utils/jwt.js";
+import { consumeRefreshToken, createRefreshToken, revokeRefreshToken } from "./token.service.js";
 
 const isDuplicateEmailError = (err: unknown): boolean => {
   return (
@@ -38,7 +39,7 @@ const DUMMY_HASH = await hashPassword(randomUUID());
 
 export const loginUser = async (
   input: LoginInput,
-): Promise<{ user: UserRow; accessToken: string }> => {
+): Promise<{ user: UserRow; accessToken: string; refreshToken: string }> => {
   const user = await findUserByEmail(input.email);
 
   const hashToCheck = user ? user.password_hash : DUMMY_HASH;
@@ -53,7 +54,26 @@ export const loginUser = async (
     userId: safeUser.id,
     role: safeUser.role,
   });
+  const refreshToken = await createRefreshToken(safeUser.id);
 
-  return { user: safeUser, accessToken };
+  return { user: safeUser, accessToken, refreshToken };
 };
 
+export const refreshSession = async (
+  refreshToken: string,
+) : Promise<{ accessToken: string; refreshToken: string }> => {
+  const userId = await consumeRefreshToken(refreshToken);
+  const user = userId ? await findUserById(userId) : null;
+
+  if (!user) {
+    throw new AppError(401, "Invalid or expired refresh token");
+  }
+
+  const accessToken = await signAccessToken({ userId: user.id, role: user.role,  });
+  const newRefreshToken = await createRefreshToken(user.id);
+  return { accessToken, refreshToken: newRefreshToken };
+};
+
+export const logoutUser = (refreshToken: string): Promise<void> => {
+  return revokeRefreshToken(refreshToken);
+};
