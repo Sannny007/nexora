@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import test from "node:test";
+import { expect, test } from "vitest";
 import { loginSchema, registerSchema } from "./auth.schema.js";
 
 test("register schema accepts valid input", () => {
@@ -8,8 +7,7 @@ test("register schema accepts valid input", () => {
     email: "user@example.com",
     password: "secure-password",
   });
-
-  assert.equal(result.success, true);
+  expect(result.success).toBe(true);
 });
 
 test("register schema rejects invalid email and short password", () => {
@@ -18,17 +16,14 @@ test("register schema rejects invalid email and short password", () => {
     email: "not-an-email",
     password: "short",
   });
-
-  assert.equal(result.success, false);
+  expect(result.success).toBe(false);
 });
 
 test("login schema requires an email and password", () => {
-  assert.equal(
+  expect(
     loginSchema.safeParse({ email: "user@example.com", password: "secret" }).success,
-    true,
-  );
-  assert.equal(
+  ).toBe(true);
+  expect(
     loginSchema.safeParse({ email: "user@example.com", password: "" }).success,
-    false,
-  );
+  ).toBe(false);
 });
