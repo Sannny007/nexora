@@ -8,8 +8,6 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-const PORT = process.env.PORT || 3000;
-
 app.get('/health', (req, res) => {
   res.status(200).json({ "status": "ok" })
 });
@@ -30,8 +28,4 @@ const handleError: ErrorRequestHandler = (err, req, res, next) => {
 };
 app.use(handleError);
 
-
-app.listen(PORT, () => {
-  console.log(`NEXORA is running on port ${PORT}`);
-
-})
+export { app };
